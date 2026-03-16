@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SERS — Smart Emergency Response System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN TOKENS — Pale Slate + Carbon Weave
+══════════════════════════════════════════ */
+:root{
+  --bg:#edf2f7;
+  --bg2:#e6ecf4;
+  --panel:rgba(244,249,255,0.93);
+  --panel2:rgba(238,245,255,0.90);
+  --card:rgba(250,253,255,0.97);
+  --stn:rgba(238,245,255,0.88);
+  --nav:rgba(245,249,255,0.97);
+
+  --bdr:rgba(160,190,220,0.52);
+  --bdr2:rgba(160,190,220,0.30);
+  --bdr3:rgba(140,175,215,0.70);
+
+  --accent:#1a6fc4;
+  --accent2:#1560b0;
+  --accent-lt:rgba(26,111,196,0.10);
+  --accent-bdr:rgba(26,111,196,0.38);
+
+  --red:#c0392b;
+  --red-lt:rgba(192,57,43,0.08);
+  --red-bdr:rgba(192,57,43,0.28);
+  --green:#0d7a55;
+  --green-lt:rgba(13,122,85,0.07);
+  --green-bdr:rgba(13,122,85,0.25);
+  --yellow:#9c6800;
+  --yellow2:#7a5200;
+  --yellow-lt:rgba(156,104,0,0.07);
+  --yellow-bdr:rgba(156,104,0,0.25);
+
+  --tx:#0d1c2e;
+  --tx2:#1e3048;
+  --mu:#5a7a9a;
+  --mu2:#8aaabb;
+
+  --shadow:0 2px 14px rgba(20,60,120,0.08);
+  --shadow2:0 6px 30px rgba(20,60,120,0.13);
+  --map-bg:linear-gradient(155deg,#dce8f4,#d4e2f0);
+  --map-line:rgba(40,90,150,0.06);
+  --bar-bg:rgba(40,90,150,0.10);
+
+  /* Carbon weave */
+  --w1:rgba(20,50,100,0.045);
+  --w2:rgba(20,50,100,0.030);
+}
+
+/* ── RESET ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);
+  background-image:
+    repeating-linear-gradient(45deg,transparent,transparent 2px,var(--w1) 2px,var(--w1) 4px),
+    repeating-linear-gradient(-45deg,transparent,transparent 2px,var(--w2) 2px,var(--w2) 4px);
+  background-attachment:fixed;
+  font-family:'Inter',sans-serif;
+  color:var(--tx);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:rgba(26,111,196,0.25);border-radius:4px}
+
+/* ── TOPNAV ── */
+.topnav{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  padding:0 20px;height:52px;
+  background:var(--nav);
+  border-bottom:2px solid var(--accent);
+  box-shadow:0 2px 16px rgba(20,60,120,0.09);
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:11px;}
+.logo-icon{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,rgba(26,111,196,0.15),rgba(26,111,196,0.28));
+  border:1px solid rgba(26,111,196,0.35);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.logo-text{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;letter-spacing:3px;color:var(--accent);}
+.logo-sub{font-size:9px;color:var(--mu);letter-spacing:2px;text-transform:uppercase;}
+.nav-tabs{display:flex;gap:2px;flex-wrap:wrap;}
+.nav-tab{
+  padding:6px 11px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  color:var(--mu);border-radius:5px;border:1px solid transparent;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.6px;transition:all .14s;
+}
+.nav-tab:hover{color:var(--accent);background:var(--accent-lt);}
+.nav-tab.active{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-bdr);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.clock{
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+  color:var(--accent);padding:4px 10px;border-radius:6px;
+  border:1px solid var(--accent-bdr);background:var(--accent-lt);letter-spacing:1.5px;
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);animation:pulse 2s infinite;display:inline-block;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes simglow{0%,100%{box-shadow:0 0 8px rgba(192,57,43,.15)}50%{box-shadow:0 0 22px rgba(192,57,43,.35)}}
+@keyframes greenglow{0%,100%{box-shadow:0 0 8px rgba(13,122,85,.15)}50%{box-shadow:0 0 22px rgba(13,122,85,.32)}}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInR{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none;padding:16px;max-width:1600px;margin:0 auto;}
+.page.active{display:block;}
+
+/* ── GRIDS ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.g2s{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.mb8{margin-bottom:8px;}.mb12{margin-bottom:12px;}.mb14{margin-bottom:14px;}
+.mt8{margin-top:8px;}.mt12{margin-top:12px;}
+
+/* ── STAT CARD ── */
+.stat{
+  background:var(--card);border:1px solid var(--bdr);border-radius:9px;
+  padding:15px;text-align:center;box-shadow:var(--shadow);
+}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;line-height:1;}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mu);margin-top:4px;letter-spacing:1.5px;text-transform:uppercase;}
+
+/* ── PANEL ── */
+.panel{
+  background:var(--panel);border:1px solid var(--bdr);border-radius:10px;
+  padding:14px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.panel.lred{border-left:3px solid var(--red);}
+.panel.lylw{border-left:3px solid var(--yellow);}
+.panel.lblu{border-left:3px solid var(--accent);}
+.panel.lgrn{border-left:3px solid var(--green);}
+.ptitle{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;color:var(--mu);text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+
+/* ── PAGE HEADER ── */
+.page-title{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:3px;}
+.page-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mu);letter-spacing:.8px;margin-bottom:14px;}
+
+/* ── BUTTONS ── */
+.btn{
+  padding:8px 15px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;
+  cursor:pointer;letter-spacing:.8px;text-transform:uppercase;
+  background:var(--card);color:var(--accent);
+  border:1px solid var(--accent-bdr);border-radius:8px;
+  box-shadow:var(--shadow);transition:all .14s;
+}
+.btn:hover{background:var(--accent-lt);box-shadow:0 4px 16px rgba(26,111,196,0.18);}
+.btn-primary{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-bdr);}
+.btn-danger{background:var(--red-lt);color:var(--red);border-color:var(--red-bdr);}
+.btn-danger:hover{background:rgba(192,57,43,0.14);}
+.btn-success{background:var(--green-lt);color:var(--green);border-color:var(--green-bdr);}
+.btn-sm{padding:4px 10px;font-size:9px;}
+.w-full{width:100%;}
+
+.sim-btn{
+  display:inline-flex;align-items:center;gap:9px;padding:10px 20px;
+  border:1.5px solid var(--red-bdr);background:var(--red-lt);color:var(--red);
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;
+  letter-spacing:1.2px;text-transform:uppercase;border-radius:9px;animation:simglow 2.5s infinite;
+}
+.sim-btn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:10px;}
+.form-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mu);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;display:block;}
+.form-control{
+  width:100%;padding:8px 11px;
+  background:var(--card);border:1px solid var(--bdr);color:var(--tx);
+  font-size:12px;outline:none;transition:all .14s;border-radius:7px;
+  font-family:'Inter',sans-serif;
+}
+.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-lt);}
+.form-control option{background:#f4f9ff;}
+
+/* ── MAP ── */
+.map-wrap{
+  background:var(--map-bg);border:1px solid var(--bdr);border-radius:9px;
+  height:240px;position:relative;overflow:hidden;
+}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(var(--map-line) 1px,transparent 1px),linear-gradient(90deg,var(--map-line) 1px,transparent 1px);background-size:36px 36px;}
+.map-scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(40,90,150,0.018) 2px,rgba(40,90,150,0.018) 4px);}
+.marker{position:absolute;transform:translate(-50%,-50%);width:11px;height:11px;border:1.5px solid rgba(255,255,255,.65);border-radius:2px;}
+.map-lbl{position:absolute;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;letter-spacing:.7px;pointer-events:none;color:var(--accent);opacity:.65;}
+.map-vehicle{position:absolute;transform:translate(-50%,-50%);font-size:14px;z-index:10;transition:left 3s linear,top 3s linear;}
+
+/* ── SEV BAR ── */
+.sev-bar{height:6px;background:var(--bar-bg);border-radius:3px;margin-top:5px;overflow:hidden;}
+.sev-fill{height:100%;border-radius:3px;}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 7px;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;border:1px solid;border-radius:4px;text-transform:uppercase;}
+.bd-a{color:var(--accent);border-color:var(--accent-bdr);background:var(--accent-lt);}
+.bd-g{color:var(--green);border-color:var(--green-bdr);background:var(--green-lt);}
+.bd-r{color:var(--red);border-color:var(--red-bdr);background:var(--red-lt);}
+.bd-y{color:var(--yellow);border-color:var(--yellow-bdr);background:var(--yellow-lt);}
+.bd-m{color:var(--mu);border-color:var(--bdr);}
+.bd-crit{color:var(--red);border-color:var(--red-bdr);background:var(--red-lt);}
+
+/* ── ALERTS ── */
+.al{padding:8px 11px;border-radius:7px;font-size:10px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:7px;border:1px solid;line-height:1.45;animation:fadeIn .3s ease;}
+.al-d{background:var(--red-lt);border-color:var(--red-bdr);color:var(--red);}
+.al-w{background:var(--yellow-lt);border-color:var(--yellow-bdr);color:var(--yellow2);}
+.al-s{background:var(--green-lt);border-color:var(--green-bdr);color:var(--green);}
+.al-i{background:var(--accent-lt);border-color:var(--accent-bdr);color:var(--accent);}
+
+/* ── AGENCY ROWS ── */
+.agency-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr2);}
+.agency-row:last-child{border-bottom:none;}
+.aname{font-size:11px;font-weight:500;color:var(--tx);}
+.chip{padding:2px 8px;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;border:1px solid;border-radius:4px;text-transform:uppercase;transition:all .3s;}
+.chip-sb{color:var(--mu2);border-color:var(--bdr);background:rgba(90,122,154,0.07);}
+.chip-nt{color:var(--yellow);border-color:var(--yellow-bdr);background:var(--yellow-lt);}
+.chip-dp{color:var(--yellow2);border-color:var(--yellow-bdr);background:var(--yellow-lt);}
+.chip-er{color:var(--accent);border-color:var(--accent-bdr);background:var(--accent-lt);}
+.chip-ar{color:var(--green);border-color:var(--green-bdr);background:var(--green-lt);}
+.chip-op{color:var(--green);border-color:var(--green-bdr);background:var(--green-lt);box-shadow:0 0 6px var(--green-lt);}
+
+/* ── TIMELINE ── */
+.tl{position:relative;padding-left:19px;}
+.tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1px;background:var(--bdr);}
+.tl-item{position:relative;margin-bottom:11px;animation:fadeIn .3s ease;}
+.tl-dot{position:absolute;left:-16px;top:3px;width:7px;height:7px;border-radius:1px;}
+.tl-t{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:.5px;}
+.tl-m{font-size:10px;font-weight:600;margin-top:2px;color:var(--tx);}
+.tl-s{font-size:9px;color:var(--mu);}
+
+/* ── STATION CARDS ── */
+.stn-card{
+  background:var(--stn);border:1px solid var(--bdr);border-radius:9px;padding:12px;
+  box-shadow:var(--shadow);transition:border-color .2s;
+}
+.stn-card.deploying{border-color:rgba(26,111,196,0.5);box-shadow:0 3px 16px rgba(26,111,196,0.14);}
+.stn-card.deployed{border-color:rgba(13,122,85,0.5);box-shadow:0 3px 16px rgba(13,122,85,0.12);}
+.stn-name{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.stn-row{display:flex;justify-content:space-between;font-size:9px;color:var(--mu);margin-bottom:2px;}
+.stn-val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--tx);}
+.mini-bar{height:3px;background:var(--bar-bg);border-radius:2px;margin-top:2px;margin-bottom:5px;}
+.mini-fill{height:100%;border-radius:2px;}
+
+/* ── FF SAFETY ── */
+.ff-row{display:flex;justify-content:space-between;align-items:center;padding:7px 9px;background:var(--stn);border:1px solid var(--bdr);border-radius:7px;margin-bottom:5px;}
+.ff-name{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--tx);}
+.ff-status{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;}
+
+/* ── ESCALATION ── */
+.esc-card{border-radius:9px;padding:12px;border:1px solid;border-left-width:3px;}
+.esc-r{background:var(--red-lt);border-color:var(--red-bdr);border-left-color:var(--red);}
+.esc-y{background:var(--yellow-lt);border-color:var(--yellow-bdr);border-left-color:var(--yellow);}
+.esc-b{background:var(--accent-lt);border-color:var(--accent-bdr);border-left-color:var(--accent);}
+.esc-title{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:1.2px;margin-bottom:5px;}
+.esc-desc{font-size:10px;color:var(--mu);margin-bottom:7px;line-height:1.5;}
+.esc-pct{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mu);margin-top:4px;}
+
+/* ── HISTORY ── */
+.hist-row{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;
+  background:var(--card);border:1px solid var(--bdr);border-radius:8px;
+  margin-bottom:7px;cursor:pointer;transition:all .14s;
+}
+.hist-row:hover{border-color:var(--accent-bdr);background:var(--accent-lt);box-shadow:var(--shadow);}
+
+/* ── COMPARISON ── */
+.comp-trad{background:rgba(255,246,244,0.92);border:1px solid var(--red-bdr);border-left:3px solid var(--red);border-radius:11px;padding:14px;}
+.comp-smart{background:rgba(240,248,255,0.95);border:1px solid var(--accent-bdr);border-left:3px solid var(--accent);border-radius:11px;padding:14px;}
+.comp-metric{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr2);font-size:10px;}
+.comp-metric:last-child{border-bottom:none;}
+.metric-name{color:var(--mu);}
+
+/* ── RESOURCE ── */
+.res-unit{
+  display:flex;align-items:center;justify-content:space-between;padding:8px 10px;
+  background:var(--card);border:1px solid var(--bdr);border-radius:7px;margin-bottom:5px;transition:all .14s;
+}
+.res-unit:hover{border-color:var(--accent-bdr);}
+.res-filter.active{background:var(--accent-lt);color:var(--accent);border-color:var(--accent-bdr);}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(150,185,220,0.42);backdrop-filter:blur(12px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease;}
+.modal{background:var(--card);border:1px solid var(--bdr3);border-radius:16px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow2);}
+.modal-head{padding:18px 22px 14px;border-bottom:1px solid var(--bdr2);border-radius:16px 16px 0 0;position:sticky;top:0;background:var(--card);}
+.modal-body{padding:18px 22px;}
+.modal-close{background:var(--stn);border:1px solid var(--bdr);color:var(--mu);width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:6px;}
+
+/* ── NOTIFICATION ── */
+.notif{
+  position:fixed;top:62px;right:16px;z-index:200;
+  background:var(--card);border:1px solid var(--bdr3);border-left:3px solid var(--accent);
+  padding:11px 14px;border-radius:11px;min-width:265px;max-width:320px;
+  box-shadow:var(--shadow2);animation:slideInR .25s ease;
+}
+.notif-title{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.notif-body{font-size:11px;color:var(--tx);line-height:1.4;}
+
+/* ── DIVIDER / UTILS ── */
+.divider{height:1px;background:var(--bdr2);margin:12px 0;}
+.text-sm{font-size:11px;}.text-xs{font-size:10px;}.text-mu{color:var(--mu);}
+.fw{font-weight:700;}.flex{display:flex;}.items-c{align-items:center;}
+.j-between{justify-content:space-between;}.text-c{text-align:center;}
+.scroll{max-height:280px;overflow-y:auto;padding-right:4px;}
+.flicker{animation:flicker .85s infinite;}
+.blink{animation:blink 1s infinite;}
+
+@media(max-width:900px){.g3,.g4{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.g2,.g3,.g4,.g2s{grid-template-columns:1fr;}.nav-tabs{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TOPNAV ═══════════════ -->
+<nav class="topnav">
+  <div class="logo">
+    <div class="logo-icon">🔥</div>
+    <div><div class="logo-text">S·E·R·S</div><div class="logo-sub">Smart Emergency Response System</div></div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('dashboard')">⌘ Command</div>
+    <div class="nav-tab" onclick="showPage('report')">📋 Report</div>
+    <div class="nav-tab" onclick="showPage('dispatch')">🚒 Dispatch</div>
+    <div class="nav-tab" onclick="showPage('agencies')">🤝 Agencies</div>
+    <div class="nav-tab" onclick="showPage('timeline')">📅 Timeline</div>
+    <div class="nav-tab" onclick="showPage('history')">🗂 History</div>
+    <div class="nav-tab" onclick="showPage('compare')">⚡ Compare</div>
+    <div class="nav-tab" onclick="showPage('resources')">🗃 Resources</div>
+  </div>
+  <div class="nav-right">
+    <span class="live-dot"></span>
+    <span class="clock" id="clock">00:00:00</span>
+  </div>
+</nav>
+<div id="notifWrap"></div>
+
+<!-- ═══════════════ PAGE: DASHBOARD ═══════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="flex items-c j-between mb14" style="flex-wrap:wrap;gap:10px;">
+    <div>
+      <div class="page-title">⬡ Command Center Dashboard</div>
+      <div class="page-sub">// LIVE SITUATIONAL AWARENESS — FIRE EMERGENCY MANAGEMENT SYSTEM</div>
+    </div>
+    <div class="flex items-c" style="gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="showPage('report')">+ REPORT</button>
+      <button class="sim-btn" id="simBtn" onclick="startSim()"><span>▶</span> START SIMULATION</button>
+      <button class="btn" id="pauseBtn" onclick="togglePause()" style="display:none;border-color:var(--yellow-bdr);color:var(--yellow);">⏸ PAUSE</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="g4 mb12">
+    <div class="stat"><div class="stat-val" id="st-active" style="color:var(--red)">0</div><div class="stat-lbl">Active Incidents</div></div>
+    <div class="stat"><div class="stat-val" id="st-units" style="color:var(--accent)">16</div><div class="stat-lbl">Units Available</div></div>
+    <div class="stat"><div class="stat-val" id="st-resp" style="color:var(--green)">—</div><div class="stat-lbl">Response Time</div></div>
+    <div class="stat"><div class="stat-val" id="st-sev" style="color:var(--mu)">—</div><div class="stat-lbl">Severity Level</div></div>
+  </div>
+
+  <!-- MAIN 2-COL -->
+  <div class="g2 mb12">
+
+    <!-- LEFT: MAP + STATIONS -->
+    <div class="flex" style="flex-direction:column;gap:12px;">
+      <div class="panel" style="padding:11px;">
+        <div class="ptitle">🗺 Live Incident Map — Metro City Grid</div>
+        <div class="map-wrap" id="mainMap">
+          <div class="map-grid"></div><div class="map-scan"></div>
+          <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" id="corridorSvg"></svg>
+          <div id="mapMarkers">
+            <div class="marker" style="left:15%;top:25%;background:var(--accent);border-color:rgba(26,111,196,.5);box-shadow:0 0 9px rgba(26,111,196,.3);"></div>
+            <div class="marker" style="left:75%;top:20%;background:var(--green);border-color:rgba(13,122,85,.5);box-shadow:0 0 9px rgba(13,122,85,.3);"></div>
+            <div class="marker" style="left:22%;top:74%;background:var(--yellow);border-color:rgba(156,104,0,.5);"></div>
+            <div class="marker" style="left:70%;top:68%;background:var(--accent);border-color:rgba(26,111,196,.5);"></div>
+            <div class="marker" style="left:46%;top:8%;background:var(--green);border-color:rgba(13,122,85,.5);width:9px;height:9px;border-radius:50%;"></div>
+            <div class="marker" style="left:10%;top:50%;background:var(--green);border-color:rgba(13,122,85,.5);width:9px;height:9px;border-radius:50%;"></div>
+          </div>
+          <div id="mapVehicles"></div>
+          <div class="map-lbl" style="left:10%;top:17%;">◈ EGMORE FS</div>
+          <div class="map-lbl" style="left:66%;top:12%;">◈ ANNA NAGAR FS</div>
+          <div class="map-lbl" style="left:10%;top:64%;">◈ GUINDY FS</div>
+          <div class="map-lbl" style="left:62%;top:58%;">◈ ROYAPURAM FS</div>
+          <div class="map-lbl" style="left:36%;top:2%;color:var(--green);opacity:.7;">+ GH PARK TOWN</div>
+          <div class="map-lbl" style="left:1%;top:43%;color:var(--green);opacity:.7;">+ RAJIV GANDHI GH</div>
+        </div>
+        <div id="corridorBar" style="display:none;margin-top:8px;">
+          <div class="al al-s" style="margin-bottom:0;">🟢 Green Corridor Active — Routes 3, 7, 12 cleared</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ptitle">🏚 Fire Station Resource Dashboard</div>
+        <div class="g2s" id="stationGrid"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="flex" style="flex-direction:column;gap:12px;">
+      <div class="panel lred">
+        <div class="ptitle">⚠️ Incident Severity Analysis</div>
+        <div id="sevContent"><div class="text-c text-mu text-xs" style="padding:20px;font-family:'JetBrains Mono',monospace;">// NO ACTIVE INCIDENT</div></div>
+      </div>
+      <div class="panel lylw">
+        <div class="ptitle">🚨 System Alerts</div>
+        <div id="alertsBox"><div class="al al-i">ℹ️ System online — all units on standby</div></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">🧑‍🚒 Firefighter Safety Monitor</div>
+        <div id="ffSafety"><div class="text-c text-mu text-xs" style="padding:14px;font-family:'JetBrains Mono',monospace;">// NO ACTIVE DEPLOYMENT</div></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">🤝 Agency Status Board</div>
+        <div class="agency-row"><div class="aname">🚒 Fire Department</div><div class="chip chip-sb" id="ag-fire">STANDBY</div></div>
+        <div class="agency-row"><div class="aname">👮 Police Department</div><div class="chip chip-sb" id="ag-police">STANDBY</div></div>
+        <div class="agency-row"><div class="aname">🚑 Ambulance Services</div><div class="chip chip-sb" id="ag-ambulance">STANDBY</div></div>
+        <div class="agency-row"><div class="aname">🏥 Hospitals</div><div class="chip chip-sb" id="ag-hospital">STANDBY</div></div>
+        <div class="agency-row"><div class="aname">🚦 Traffic Authority</div><div class="chip chip-sb" id="ag-traffic">STANDBY</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESCALATION (hidden until triggered) -->
+  <div class="panel lred" id="escPanel" style="display:none;">
+    <div class="ptitle flicker" style="color:var(--red);">⚡ Escalation Prediction Engine — ACTIVE</div>
+    <div class="g3" id="escContent"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: REPORT ═══════════════ -->
+<div class="page" id="page-report">
+  <div class="page-title">📋 Report Fire Incident</div>
+  <div class="page-sub">// SUBMIT NEW INCIDENT FOR IMMEDIATE AI ANALYSIS AND DISPATCH</div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ptitle">📝 Incident Report Form</div>
+      <div class="form-group"><label class="form-label">Incident Location *</label><input class="form-control" id="f-loc" type="text" value="Spencer Plaza, Anna Salai, Chennai - 600002"></div>
+      <div class="form-group"><label class="form-label">Fire Scale *</label><select class="form-control" id="f-scale"><option>Small</option><option>Medium</option><option selected>Large</option></select></div>
+      <div class="form-group"><label class="form-label">People Trapped *</label><select class="form-control" id="f-trapped"><option selected>Yes</option><option>No</option><option>Maybe</option></select></div>
+      <div class="form-group"><label class="form-label">Building Type *</label><select class="form-control" id="f-building"><option>House</option><option>Hospital</option><option>Factory</option><option selected>Mall</option><option>Theatre</option><option>Chemical Plant</option></select></div>
+      <div class="form-group"><label class="form-label">Nearby Hazards</label><input class="form-control" id="f-hazards" type="text" value="LPG cylinders in basement kitchen, TNEB substation on premises"></div>
+      <div class="form-group"><label class="form-label">Weather Conditions</label><select class="form-control" id="f-weather"><option>Clear</option><option selected>Windy</option><option>Rain</option><option>Storm</option><option>Hot &amp; Dry</option></select></div>
+      <div class="form-group"><label class="form-label">Additional Notes</label><textarea class="form-control" id="f-notes" rows="2">Multiple eyewitnesses report rapid spread near food court. Smoke visible from Anna Salai. Evacuation initiated.</textarea></div>
+      <button class="btn btn-danger w-full" onclick="submitIncident()">🚨 SUBMIT INCIDENT REPORT</button>
+    </div>
+    <div>
+      <div class="panel mb12" id="reportResult" style="display:none;"></div>
+      <div class="panel">
+        <div class="ptitle">ℹ️ Severity Classification Guide</div>
+        <div class="al al-d">🔴 CRITICAL — Large fire + Chemical/Hospital + Trapped + Hazards</div>
+        <div class="al al-w">🟠 HIGH — Large/Medium + Trapped or Hazardous building</div>
+        <div class="al al-w" style="color:var(--yellow);">🟡 MEDIUM — Medium fire + Standard building</div>
+        <div class="al al-s">🟢 LOW — Small fire + No trapped + No hazards</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: DISPATCH ═══════════════ -->
+<div class="page" id="page-dispatch">
+  <div class="page-title">🚒 Intelligent Dispatch Decision Panel</div>
+  <div class="page-sub">// AI-POWERED RESOURCE ALLOCATION AND DEPLOYMENT STRATEGY</div>
+  <div class="g2 mb12">
+    <div class="panel">
+      <div class="ptitle">🧠 Decision Engine</div>
+      <div id="decisionEngine"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// AWAITING INCIDENT DATA</div></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">📦 Deployed Units</div>
+      <div id="deployedUnits"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// AWAITING DEPLOYMENT ORDERS</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">🔁 Dynamic Redeployment Log</div>
+    <div id="redeployLog"><div class="text-mu text-xs" style="padding:10px;font-family:'JetBrains Mono',monospace;">// NO REDEPLOYMENT EVENTS</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: AGENCIES ═══════════════ -->
+<div class="page" id="page-agencies">
+  <div class="page-title">🤝 Multi-Agency Coordination Dashboard</div>
+  <div class="page-sub">// REAL-TIME COORDINATION ACROSS ALL EMERGENCY RESPONSE AGENCIES</div>
+  <div class="g2 mb12">
+    <div class="panel">
+      <div class="ptitle">🏛 Agency Status Board</div>
+      <div class="agency-row"><div class="aname">🚒 Fire Department</div><div class="chip chip-sb" id="ag2-fire">STANDBY</div></div>
+      <div class="agency-row"><div class="aname">👮 Police Department</div><div class="chip chip-sb" id="ag2-police">STANDBY</div></div>
+      <div class="agency-row"><div class="aname">🚑 Ambulance Services</div><div class="chip chip-sb" id="ag2-ambulance">STANDBY</div></div>
+      <div class="agency-row"><div class="aname">🏥 Hospitals</div><div class="chip chip-sb" id="ag2-hospital">STANDBY</div></div>
+      <div class="agency-row"><div class="aname">🚦 Traffic Authority</div><div class="chip chip-sb" id="ag2-traffic">STANDBY</div></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">🏥 Hospital Notification System</div>
+      <div id="hospitalNotif"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// NO AMBULANCE DEPLOYED</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">📡 Communication Log</div>
+    <div id="commLog" class="scroll"><div class="text-mu text-xs" style="font-family:'JetBrains Mono',monospace;">// NO COMMUNICATIONS RECORDED</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: TIMELINE ═══════════════ -->
+<div class="page" id="page-timeline">
+  <div class="page-title">📅 Incident Timeline Viewer</div>
+  <div class="page-sub">// COMPLETE EVENT LOG OF THE INCIDENT RESPONSE LIFECYCLE</div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ptitle">📋 Live Event Log</div>
+      <div class="tl scroll" id="timelineLog" style="max-height:480px;"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// NO EVENTS RECORDED</div></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">▶ Incident Playback</div>
+      <div id="playbackPanel"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// NO INCIDENT TO REPLAY</div></div>
+      <div class="divider"></div>
+      <div class="ptitle">📊 Response Metrics</div>
+      <div class="flex" style="flex-direction:column;gap:8px;">
+        <div class="flex j-between text-sm"><span class="text-mu">Total Events</span><span class="fw" id="m-events" style="font-family:'JetBrains Mono',monospace;color:var(--accent)">0</span></div>
+        <div class="flex j-between text-sm"><span class="text-mu">Units Deployed</span><span class="fw" id="m-units" style="font-family:'JetBrains Mono',monospace;color:var(--accent)">0</span></div>
+        <div class="flex j-between text-sm"><span class="text-mu">Response Time</span><span class="fw" id="m-rtime" style="font-family:'JetBrains Mono',monospace;color:var(--green)">—</span></div>
+        <div class="flex j-between text-sm"><span class="text-mu">Agencies Notified</span><span class="fw" id="m-agencies" style="font-family:'JetBrains Mono',monospace;color:var(--accent)">0</span></div>
+        <div class="flex j-between text-sm"><span class="text-mu">Status</span><span class="fw text-mu" id="m-status" style="font-family:'JetBrains Mono',monospace;">IDLE</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: HISTORY ═══════════════ -->
+<div class="page" id="page-history">
+  <div class="page-title">🗂 Incident History Database</div>
+  <div class="page-sub">// ARCHIVE OF COMPLETED INCIDENTS WITH FULL RESPONSE ANALYSIS</div>
+
+  <!-- ── STATS ROW (top, attention-grabbing) ── -->
+  <div class="g4 mb14">
+    <div class="stat" style="position:relative;overflow:hidden;">
+      <div class="stat-val" id="hs-total" style="color:var(--accent)">3</div>
+      <div class="stat-lbl">Total Incidents</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;align-items:flex-end;gap:4px;height:36px;justify-content:center;">
+          <div style="width:10px;background:var(--accent);opacity:.35;border-radius:2px 2px 0 0;height:55%;"></div>
+          <div style="width:10px;background:var(--accent);opacity:.55;border-radius:2px 2px 0 0;height:75%;"></div>
+          <div style="width:10px;background:var(--accent);opacity:.75;border-radius:2px 2px 0 0;height:90%;"></div>
+          <div style="width:10px;background:var(--accent);border-radius:2px 2px 0 0;height:100%;"></div>
+        </div>
+        <div style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:4px;">↑ QUARTERLY TREND</div>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-val" style="color:var(--green)">94%</div>
+      <div class="stat-lbl">Containment Rate</div>
+      <div style="margin-top:10px;">
+        <div style="height:8px;background:var(--bar-bg);border-radius:4px;overflow:hidden;position:relative;">
+          <div id="anim-containment" style="width:0%;height:100%;background:var(--green);border-radius:4px;transition:width 1.2s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:5px;">
+          <span style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;">0%</span>
+          <span style="font-size:9px;color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;">94 / 100</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-val" style="color:var(--yellow)">7.2<span style="font-size:14px">m</span></div>
+      <div class="stat-lbl">Avg Response Time</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;align-items:flex-end;gap:3px;height:36px;justify-content:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:7px;color:var(--mu);font-family:'JetBrains Mono',monospace;">5.4</span>
+            <div style="width:14px;background:var(--green);border-radius:2px 2px 0 0;" style="height:calc(5.4/10*36px);"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:7px;color:var(--mu);font-family:'JetBrains Mono',monospace;">7.8</span>
+            <div style="width:14px;background:var(--yellow);border-radius:2px 2px 0 0;height:28px;"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:7px;color:var(--mu);font-family:'JetBrains Mono',monospace;">7.2</span>
+            <div style="width:14px;background:var(--accent);border-radius:2px 2px 0 0;height:26px;"></div>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:4px;text-align:center;">MIN PER INCIDENT</div>
+      </div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-val" style="color:var(--red)">1</div>
+      <div class="stat-lbl">Critical Incidents</div>
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:center;gap:6px;align-items:center;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 6px rgba(192,57,43,.4);"></div>
+            <span style="font-size:8px;color:var(--red);font-family:'JetBrains Mono',monospace;">CRIT</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--yellow);box-shadow:0 0 6px rgba(156,104,0,.3);"></div>
+            <span style="font-size:8px;color:var(--yellow);font-family:'JetBrains Mono',monospace;">HIGH</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 6px rgba(13,122,85,.3);"></div>
+            <span style="font-size:8px;color:var(--green);font-family:'JetBrains Mono',monospace;">LOW</span>
+          </div>
+        </div>
+        <div style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:6px;">1 · 1 · 1 SPLIT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHART ROW ── -->
+  <div class="panel mb14" style="padding:16px;">
+    <div class="ptitle">📊 Incident Overview — Chennai Metro Grid</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;align-items:end;">
+
+      <!-- Severity Distribution Donut (CSS) -->
+      <div style="text-align:center;">
+        <div style="font-size:10px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Severity Split</div>
+        <div style="position:relative;width:90px;height:90px;margin:0 auto;">
+          <svg viewBox="0 0 36 36" style="width:90px;height:90px;transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--bar-bg)" stroke-width="3.5"/>
+            <!-- CRITICAL: 33% -->
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--red)" stroke-width="3.5"
+              stroke-dasharray="33.3 66.7" stroke-dashoffset="0" style="transition:stroke-dasharray 1s ease;"/>
+            <!-- HIGH: 33% -->
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--yellow)" stroke-width="3.5"
+              stroke-dasharray="33.3 66.7" stroke-dashoffset="-33.3" style="transition:stroke-dasharray 1s ease;"/>
+            <!-- LOW: 33% -->
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--green)" stroke-width="3.5"
+              stroke-dasharray="33.3 66.7" stroke-dashoffset="-66.6" style="transition:stroke-dasharray 1s ease;"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--tx);">3</div>
+            <div style="font-size:8px;color:var(--mu);">Total</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:10px;">
+          <div style="display:flex;align-items:center;gap:3px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--red);"></div><span style="font-size:9px;color:var(--mu);">Crit</span></div>
+          <div style="display:flex;align-items:center;gap:3px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--yellow);"></div><span style="font-size:9px;color:var(--mu);">High</span></div>
+          <div style="display:flex;align-items:center;gap:3px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);"></div><span style="font-size:9px;color:var(--mu);">Low</span></div>
+        </div>
+      </div>
+
+      <!-- Response Time by Incident (bar chart) -->
+      <div>
+        <div style="font-size:10px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Response Time (min)</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;"><span style="color:var(--mu);">INC-2241 · T.Nagar</span><span style="font-family:'JetBrains Mono',monospace;color:var(--green);font-weight:700;">4.6m</span></div>
+            <div style="height:7px;background:var(--bar-bg);border-radius:3px;overflow:hidden;"><div id="rbar-1" style="width:0%;height:100%;background:var(--green);border-radius:3px;transition:width 1.2s ease 0.1s;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;"><span style="color:var(--mu);">INC-2198 · Royapettah</span><span style="font-family:'JetBrains Mono',monospace;color:var(--yellow);font-weight:700;">7.2m</span></div>
+            <div style="height:7px;background:var(--bar-bg);border-radius:3px;overflow:hidden;"><div id="rbar-2" style="width:0%;height:100%;background:var(--yellow);border-radius:3px;transition:width 1.2s ease 0.25s;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:3px;"><span style="color:var(--mu);">INC-2150 · Guindy</span><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700;">5.4m</span></div>
+            <div style="height:7px;background:var(--bar-bg);border-radius:3px;overflow:hidden;"><div id="rbar-3" style="width:0%;height:100%;background:var(--accent);border-radius:3px;transition:width 1.2s ease 0.4s;"></div></div>
+          </div>
+        </div>
+        <div style="font-size:8px;color:var(--mu);margin-top:8px;font-family:'JetBrains Mono',monospace;">TARGET: &lt;8 min · All within SLA ✓</div>
+      </div>
+
+      <!-- Units Deployed per Incident -->
+      <div>
+        <div style="font-size:10px;color:var(--mu);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Units Deployed</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:70px;padding-bottom:4px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+            <span style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;">3</span>
+            <div id="ubar-1" style="width:100%;background:var(--green);border-radius:3px 3px 0 0;height:0%;transition:height 1.2s ease 0.1s;min-height:0;"></div>
+            <span style="font-size:8px;color:var(--mu);">LOW</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+            <span style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;">7</span>
+            <div id="ubar-2" style="width:100%;background:var(--yellow);border-radius:3px 3px 0 0;height:0%;transition:height 1.2s ease 0.25s;min-height:0;"></div>
+            <span style="font-size:8px;color:var(--mu);">HIGH</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+            <span style="font-size:9px;color:var(--mu);font-family:'JetBrains Mono',monospace;">14</span>
+            <div id="ubar-3" style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:0%;transition:height 1.2s ease 0.4s;min-height:0;"></div>
+            <span style="font-size:8px;color:var(--mu);">CRIT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ARCHIVE + DETAILS ── -->
+  <div class="g2 mb12">
+    <div class="panel"><div class="ptitle">📂 Incident Archive</div><div id="historyList"></div></div>
+    <div class="panel"><div class="ptitle">📊 Incident Details</div><div id="historyDetail"><div class="text-c text-mu text-xs" style="padding:24px;font-family:'JetBrains Mono',monospace;">// SELECT INCIDENT TO VIEW DETAILS</div></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: COMPARE ═══════════════ -->
+<div class="page" id="page-compare">
+  <div class="page-title">⚡ Traditional vs Smart Response Simulator</div>
+  <div class="page-sub">// SIDE-BY-SIDE COMPARISON — LEGACY VS AI-POWERED EMERGENCY RESPONSE</div>
+  <div class="g2 mb12">
+    <div class="comp-trad">
+      <div class="ptitle" style="color:var(--red);">🚨 Traditional Emergency Response</div>
+      <div class="al al-d" style="font-size:10px;">✗ Single unit deployment only</div>
+      <div class="al al-d" style="font-size:10px;">✗ No real-time resource analysis</div>
+      <div class="al al-d" style="font-size:10px;">✗ Manual dispatch decisions</div>
+      <div class="al al-d" style="font-size:10px;">✗ No dynamic traffic control</div>
+      <div class="al al-d" style="font-size:10px;">✗ No escalation prediction</div>
+      <div class="al al-d" style="font-size:10px;">✗ Sequential agency notification</div>
+      <div class="al al-d" style="font-size:10px;">✗ No firefighter safety monitoring</div>
+      <div class="divider"></div>
+      <div class="comp-metric"><span class="metric-name">Arrival Time</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:700;">18-22 min</span></div>
+      <div class="comp-metric"><span class="metric-name">Fire Spread</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:700;">65%</span></div>
+      <div class="comp-metric"><span class="metric-name">Damage Risk</span><span style="color:var(--red);font-weight:700;">Very High</span></div>
+      <div class="comp-metric"><span class="metric-name">Efficiency</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:700;">38%</span></div>
+      <div class="comp-metric"><span class="metric-name">Containment</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace;font-weight:700;">45-60 min</span></div>
+    </div>
+    <div class="comp-smart">
+      <div class="ptitle" style="color:var(--accent);">🤖 Smart Emergency Response (SERS)</div>
+      <div class="al al-s" style="font-size:10px;">✓ Multi-unit intelligent deployment</div>
+      <div class="al al-s" style="font-size:10px;">✓ AI-powered resource optimization</div>
+      <div class="al al-s" style="font-size:10px;">✓ Automated dispatch decisions</div>
+      <div class="al al-s" style="font-size:10px;">✓ Green corridor traffic control</div>
+      <div class="al al-s" style="font-size:10px;">✓ Real-time escalation prediction</div>
+      <div class="al al-s" style="font-size:10px;">✓ Simultaneous agency coordination</div>
+      <div class="al al-s" style="font-size:10px;">✓ Live firefighter safety monitoring</div>
+      <div class="divider"></div>
+      <div class="comp-metric"><span class="metric-name">Arrival Time</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;">6-8 min</span></div>
+      <div class="comp-metric"><span class="metric-name">Fire Spread</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;">18%</span></div>
+      <div class="comp-metric"><span class="metric-name">Damage Risk</span><span style="color:var(--green);font-weight:700;">Reduced 72%</span></div>
+      <div class="comp-metric"><span class="metric-name">Efficiency</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;">94%</span></div>
+      <div class="comp-metric"><span class="metric-name">Containment</span><span style="color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;">12-18 min</span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">📊 Visual Metric Comparison</div>
+    <div id="compBars"></div>
+    <div class="divider"></div>
+    <div class="text-c"><button class="btn" onclick="runCompare()">▶ RUN COMPARISON ANIMATION</button></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGE: RESOURCES ═══════════════ -->
+<div class="page" id="page-resources">
+  <div class="page-title">🗃 Resource Management Center</div>
+  <div class="page-sub">// LIVE STATUS OF ALL STATIONS, UNITS AND DEPARTMENTS ACROSS THE METRO GRID</div>
+  <div class="g4 mb12" id="res-summary"></div>
+  <div class="flex items-c mb12" style="gap:10px;flex-wrap:wrap;">
+    <span class="text-mu text-xs" style="font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;">FILTER:</span>
+    <button class="btn btn-sm res-filter active" data-f="all" onclick="setResFilter('all')">ALL</button>
+    <button class="btn btn-sm res-filter" data-f="available" onclick="setResFilter('available')">🟢 AVAILABLE</button>
+    <button class="btn btn-sm res-filter" data-f="mission" onclick="setResFilter('mission')">🔴 ON MISSION</button>
+    <button class="btn btn-sm res-filter" data-f="maintenance" onclick="setResFilter('maintenance')">🟡 MAINTENANCE</button>
+    <div style="flex:1;"></div>
+    <button class="btn btn-primary btn-sm" onclick="randomRes()">⟳ REFRESH STATUS</button>
+  </div>
+  <div id="resDepts"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+// ── STATE ────────────────────────────────────────────────
+const S={
+  running:false,paused:false,done:false,active:false,
+  incId:null,incData:null,timers:[],pauseOffset:0,startTime:null,
+  events:[],history:[]
+};
+
+S.history=[
+  {id:'INC-2241',loc:'14 Venkatnarayana Rd, T. Nagar',building:'House',scale:'Small',severity:'LOW',response:'4.6 min',units:3,outcome:'Contained',closedAt:'2025-03-08 14:22',totalTime:'210',events:[]},
+  {id:'INC-2198',loc:'Express Avenue Mall, Royapettah',building:'Mall',scale:'Medium',severity:'HIGH',response:'7.2 min',units:7,outcome:'Controlled',closedAt:'2025-02-21 09:15',totalTime:'348',events:[]},
+  {id:'INC-2150',loc:'SIDCO Industrial Estate, Guindy',building:'Factory',scale:'Large',severity:'CRITICAL',response:'5.4 min',units:14,outcome:'Contained',closedAt:'2025-01-30 23:41',totalTime:'512',events:[]}
+];
+
+const STATIONS=[
+  {id:'A',name:'EGMORE',color:'var(--accent)',trucks:4,water:12000,distance:2.1,traffic:'Moderate',equip:'Full'},
+  {id:'B',name:'ANNA NAGAR',color:'var(--green)',trucks:5,water:15000,distance:4.8,traffic:'Light',equip:'Full'},
+  {id:'C',name:'GUINDY',color:'var(--yellow)',trucks:3,water:9000,distance:5.6,traffic:'Heavy',equip:'Partial'},
+  {id:'D',name:'ROYAPURAM',color:'var(--accent)',trucks:4,water:11000,distance:6.3,traffic:'Moderate',equip:'Full'}
+];
+
+const DEPTS=[
+  {id:'fire',label:'🚒 Tamil Nadu Fire & Rescue Services',color:'var(--red)',stations:[
+    {name:'Egmore Fire Station',id:'EGFS',location:'Egmore, Chennai-8',grid:'Zone North',units:[
+      {type:'Fire Tender',id:'FT-EG01',status:'available',crew:4,capacity:'12000L'},
+      {type:'Fire Tender',id:'FT-EG02',status:'mission',crew:4,capacity:'12000L'},
+      {type:'Hydraulic Platform',id:'HP-EG01',status:'available',crew:5,capacity:'32m reach'}]},
+    {name:'Anna Nagar Fire Station',id:'ANFS',location:'Anna Nagar West, Chennai-40',grid:'Zone Central',units:[
+      {type:'Fire Tender',id:'FT-AN01',status:'available',crew:4,capacity:'15000L'},
+      {type:'Fire Tender',id:'FT-AN02',status:'available',crew:4,capacity:'15000L'},
+      {type:'Fire Tender',id:'FT-AN03',status:'maintenance',crew:0,capacity:'15000L'},
+      {type:'Water Tanker',id:'WT-AN01',status:'available',crew:3,capacity:'20000L'},
+      {type:'Rescue Tender',id:'RT-AN01',status:'mission',crew:6,capacity:'—'}]},
+    {name:'Guindy Fire Station',id:'GDFS',location:'Guindy, Chennai-32',grid:'Zone South',units:[
+      {type:'Fire Tender',id:'FT-GD01',status:'mission',crew:4,capacity:'9000L'},
+      {type:'Fire Tender',id:'FT-GD02',status:'maintenance',crew:0,capacity:'9000L'}]},
+    {name:'Royapuram Fire Station',id:'RPFS',location:'Royapuram, Chennai-13',grid:'Zone Harbour',units:[
+      {type:'Fire Tender',id:'FT-RP01',status:'available',crew:4,capacity:'11000L'},
+      {type:'Fire Tender',id:'FT-RP02',status:'available',crew:4,capacity:'11000L'},
+      {type:'Aerial Ladder Truck',id:'AL-RP01',status:'maintenance',crew:3,capacity:'28m reach'},
+      {type:'Hazmat Unit',id:'HZ-RP01',status:'available',crew:5,capacity:'—'}]}]},
+  {id:'ambulance',label:'🚑 Tamil Nadu 108 Ambulance Services',color:'var(--green)',stations:[
+    {name:'108 Base — Park Town',id:'EMS-PT',location:'Park Town, Chennai-3',grid:'Zone North',units:[
+      {type:'ALS Ambulance',id:'AMB-01',status:'available',crew:2,capacity:'2 patients'},
+      {type:'ALS Ambulance',id:'AMB-02',status:'mission',crew:2,capacity:'2 patients'},
+      {type:'BLS Ambulance',id:'AMB-03',status:'available',crew:2,capacity:'2 patients'},
+      {type:'Paramedic Response Vehicle',id:'PRV-01',status:'available',crew:1,capacity:'1 patient'}]},
+    {name:'108 Base — Adyar',id:'EMS-AD',location:'Adyar, Chennai-20',grid:'Zone South',units:[
+      {type:'ALS Ambulance',id:'AMB-04',status:'maintenance',crew:0,capacity:'2 patients'},
+      {type:'BLS Ambulance',id:'AMB-05',status:'available',crew:2,capacity:'2 patients'},
+      {type:'Mass Casualty Vehicle',id:'MCV-01',status:'available',crew:6,capacity:'10 patients'}]}]},
+  {id:'police',label:'👮 Chennai City Police',color:'var(--accent)',stations:[
+    {name:'Thousand Lights PS',id:'TLPS',location:'Anna Salai, Chennai-6',grid:'Zone Central',units:[
+      {type:'Patrol Vehicle',id:'PV-TL01',status:'mission',crew:2,capacity:'—'},
+      {type:'Patrol Vehicle',id:'PV-TL02',status:'available',crew:2,capacity:'—'},
+      {type:'Patrol Vehicle',id:'PV-TL03',status:'available',crew:2,capacity:'—'},
+      {type:'Riot Control Unit',id:'RCU-TL1',status:'available',crew:8,capacity:'—'}]},
+    {name:'Royapettah PS',id:'RPPS',location:'Royapettah, Chennai-14',grid:'Zone East',units:[
+      {type:'Patrol Vehicle',id:'PV-RP01',status:'available',crew:2,capacity:'—'},
+      {type:'Patrol Vehicle',id:'PV-RP02',status:'maintenance',crew:0,capacity:'—'},
+      {type:'Quick Response Team',id:'QRT-RP1',status:'available',crew:10,capacity:'—'}]}]},
+  {id:'hospital',label:'🏥 Govt Hospitals — Chennai',color:'var(--accent)',stations:[
+    {name:'Govt General Hospital, Park Town',id:'GGH',location:'Park Town, Chennai-3',grid:'Zone North',units:[
+      {type:'Trauma Bay',id:'TB-01',status:'available',crew:4,capacity:'Critical'},
+      {type:'Trauma Bay',id:'TB-02',status:'available',crew:4,capacity:'Critical'},
+      {type:'Burns Unit Bay',id:'BU-01',status:'maintenance',crew:0,capacity:'Critical'},
+      {type:'Surgical Team',id:'ST-01',status:'available',crew:6,capacity:'—'}]},
+    {name:'Rajiv Gandhi Govt General Hospital',id:'RGGH',location:'Poonamallee High Rd, Chennai-10',grid:'Zone West',units:[
+      {type:'Emergency Trauma Bay',id:'ETB-01',status:'available',crew:4,capacity:'Moderate'},
+      {type:'Emergency Ward',id:'EW-RG01',status:'mission',crew:8,capacity:'30 beds'}]}]},
+  {id:'traffic',label:'🚦 Chennai Traffic Police',color:'var(--yellow)',stations:[
+    {name:'Integrated Traffic Mgmt Centre',id:'ITMC',location:'Park Town, Chennai-3',grid:'Zone All',units:[
+      {type:'Signal Control Unit',id:'SCU-01',status:'available',crew:2,capacity:'Anna Salai Corridor'},
+      {type:'Signal Control Unit',id:'SCU-02',status:'mission',crew:2,capacity:'Poonamallee H. Rd'},
+      {type:'Mobile Command Vehicle',id:'MCV-01',status:'available',crew:3,capacity:'Zone Central'},
+      {type:'CCTV Surveillance Drone',id:'DRN-01',status:'maintenance',crew:1,capacity:'—'}]}]}
+];
+
+let activeResFilter='all';
+
+// ── CLOCK ────────────────────────────────────────────────
+function tick(){const d=new Date();document.getElementById('clock').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');}
+setInterval(tick,1000);tick();
+
+// ── NAV ──────────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const pages=['dashboard','report','dispatch','agencies','timeline','history','compare','resources'];
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',pages[i]===id));
+  if(id==='compare')initCompare();
+  if(id==='history'){renderHistory();setTimeout(animateHistCharts,120);}
+  if(id==='resources'){renderResSummary();renderResources();}
+}
+
+// ── STATION GRID ─────────────────────────────────────────
+function renderStations(statuses){
+  statuses=statuses||{};
+  document.getElementById('stationGrid').innerHTML=STATIONS.map(s=>{
+    const st=statuses[s.id]||'standby';
+    const cls=st==='deploying'?'deploying':st==='deployed'?'deployed':'';
+    const badge=st==='deploying'?'<span class="badge bd-a">DEPLOYING</span>':st==='deployed'?'<span class="badge bd-g">DEPLOYED</span>':'<span class="badge bd-m">STANDBY</span>';
+    const tc=s.traffic==='Heavy'?'var(--red)':s.traffic==='Moderate'?'var(--yellow)':'var(--green)';
+    return`<div class="stn-card ${cls}">
+      <div class="stn-name"><span style="color:${s.color}">◈ ${s.name}</span>${badge}</div>
+      <div class="stn-row"><span>Distance</span><span class="stn-val">${s.distance}km</span></div>
+      <div class="stn-row"><span>Trucks</span><span class="stn-val">${s.trucks}</span></div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${s.trucks/5*100}%;background:${s.color}"></div></div>
+      <div class="stn-row"><span>Water</span><span class="stn-val">${(s.water/1000).toFixed(0)}K L</span></div>
+      <div class="mini-bar"><div class="mini-fill" style="width:${s.water/15000*100}%;background:${s.color}"></div></div>
+      <div class="stn-row"><span>Equipment</span><span class="stn-val">${s.equip}</span></div>
+      <div class="stn-row"><span>Traffic</span><span class="stn-val" style="color:${tc}">${s.traffic.toUpperCase()}</span></div>
+    </div>`;
+  }).join('');
+}
+renderStations();
+
+// ── SEVERITY ─────────────────────────────────────────────
+function calcSeverity(scale,trapped,building,hazards){
+  let sc=0;
+  if(scale==='Large')sc+=3;else if(scale==='Medium')sc+=2;else sc+=1;
+  if(trapped==='Yes')sc+=3;else if(trapped==='Maybe')sc+=1;
+  if(['Chemical Plant','Hospital','Theatre'].includes(building))sc+=3;
+  else if(['Mall','Factory'].includes(building))sc+=2;
+  if(hazards&&hazards.length>5)sc+=2;
+  return sc>=9?'CRITICAL':sc>=6?'HIGH':sc>=3?'MEDIUM':'LOW';
+}
+function sevColor(s){return{CRITICAL:'var(--red)',HIGH:'var(--red)',MEDIUM:'var(--yellow)',LOW:'var(--green)'}[s];}
+function showSeverity(sev,scale,trapped,building,weather){
+  const pct={CRITICAL:100,HIGH:75,MEDIUM:46,LOW:20}[sev];
+  const col=sevColor(sev);
+  document.getElementById('sevContent').innerHTML=`
+    <div class="flex items-c j-between mb8">
+      <div style="font-family:monospace;font-size:24px;font-weight:700;color:${col};"${sev==='CRITICAL'?' class="flicker"':''}>${sev}</div>
+      <span class="badge bd-${sev==='CRITICAL'||sev==='HIGH'?'r':sev==='MEDIUM'?'y':'g'}">${sev}</span>
+    </div>
+    <div class="sev-bar"><div class="sev-fill" style="width:${pct}%;background:${col}"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:9px;font-size:10px;">
+      <div><span class="text-mu">Scale: </span><b>${scale}</b></div>
+      <div><span class="text-mu">Trapped: </span><b>${trapped}</b></div>
+      <div><span class="text-mu">Building: </span><b>${building}</b></div>
+      <div><span class="text-mu">Weather: </span><b>${weather}</b></div>
+    </div>`;
+  document.getElementById('st-sev').textContent=sev;
+  document.getElementById('st-sev').style.color=col;
+}
+
+// ── SUBMIT INCIDENT ───────────────────────────────────────
+function submitIncident(){
+  const loc=document.getElementById('f-loc').value||'Unknown';
+  const scale=document.getElementById('f-scale').value;
+  const trapped=document.getElementById('f-trapped').value;
+  const building=document.getElementById('f-building').value;
+  const hazards=document.getElementById('f-hazards').value;
+  const weather=document.getElementById('f-weather').value;
+  const id='INC-'+(2300+Math.floor(Math.random()*99));
+  const severity=calcSeverity(scale,trapped,building,hazards);
+  const col=sevColor(severity);
+  S.incId=id;S.incData={id,loc,scale,trapped,building,hazards,weather,severity};S.active=true;
+  const r=document.getElementById('reportResult');r.style.display='block';
+  r.innerHTML=`<div class="ptitle">✅ Incident Registered</div>
+    <div class="al al-d">🚨 <b>${id}</b> — <b>${loc}</b></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px;font-size:11px;">
+      <div><span class="text-mu">Scale: </span><b>${scale}</b></div>
+      <div><span class="text-mu">Trapped: </span><b>${trapped}</b></div>
+      <div><span class="text-mu">Building: </span><b>${building}</b></div>
+      <div><span class="text-mu">Severity: </span><b style="color:${col}">${severity}</b></div>
+    </div>
+    <div class="divider"></div>
+    <div class="text-c"><button class="btn btn-danger" onclick="showPage('dashboard');startSim()">🚨 GO TO DASHBOARD &amp; SIMULATE</button></div>`;
+  addFireMarker(45,45);showSeverity(severity,scale,trapped,building,weather);
+  document.getElementById('st-active').textContent='1';
+  addAlert('Incident reported — ID: '+id+' | '+loc,'danger');
+  addEvent('🚨 Incident Reported','ID: '+id+' | Location: '+loc,'red');
+  notify('Incident Reported',id+' — '+loc+' | Severity: '+severity,'danger');
+}
+
+// ── MAP HELPERS ───────────────────────────────────────────
+function addFireMarker(x,y){
+  const m=document.getElementById('mapMarkers');
+  const old=document.getElementById('fire-marker');if(old)old.remove();
+  const old2=document.getElementById('fire-label');if(old2)old2.remove();
+  const el=document.createElement('div');
+  el.id='fire-marker';
+  el.style.cssText=`position:absolute;left:${x}%;top:${y}%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--red);border:2px solid rgba(255,255,255,.72);box-shadow:0 0 18px rgba(192,57,43,.45);animation:pulse 1s infinite;z-index:5;`;
+  m.appendChild(el);
+  const lbl=document.createElement('div');
+  lbl.id='fire-label';lbl.className='map-lbl';
+  lbl.style.cssText=`left:${x+2}%;top:${y-7}%;color:var(--red);font-size:9px;font-weight:700;opacity:1;`;
+  lbl.textContent='⬡ FIRE';m.appendChild(lbl);
+}
+function addVehicle(id,x,y,emoji,tx,ty,delay){
+  delay=delay||0;
+  const c=document.getElementById('mapVehicles');
+  const el=document.createElement('div');
+  el.id='veh-'+id;el.className='map-vehicle';
+  el.style.cssText=`left:${x}%;top:${y}%;`;el.textContent=emoji;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.left=tx+'%';el.style.top=ty+'%';},delay+200);
+}
+function showCorridor(){
+  const svg=document.getElementById('corridorSvg');
+  const map=document.getElementById('mainMap');
+  const w=map.offsetWidth,h=map.offsetHeight;
+  svg.innerHTML='';
+  [[{x:.15,y:.25},{x:.30,y:.36},{x:.46,y:.46}],[{x:.75,y:.20},{x:.60,y:.32},{x:.46,y:.46}],[{x:.22,y:.74},{x:.34,y:.59},{x:.46,y:.46}]].forEach((pts,i)=>{
+    const el=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    el.setAttribute('points',pts.map(p=>p.x*w+','+p.y*h).join(' '));
+    el.setAttribute('stroke','var(--green)');el.setAttribute('stroke-width','1.5');
+    el.setAttribute('fill','none');el.setAttribute('opacity','0');
+    el.setAttribute('stroke-dasharray','5,3');svg.appendChild(el);
+    setTimeout(()=>el.setAttribute('opacity','0.7'),i*280);
+  });
+  document.getElementById('corridorBar').style.display='block';
+}
+
+// ── ALERTS ───────────────────────────────────────────────
+function addAlert(msg,type){
+  const box=document.getElementById('alertsBox');
+  if(box.querySelector('.text-mu'))box.innerHTML='';
+  const cls={danger:'al-d',warning:'al-w',success:'al-s',info:'al-i'}[type]||'al-i';
+  const ico={danger:'🚨',warning:'⚠️',success:'✅',info:'ℹ️'}[type]||'●';
+  box.innerHTML=`<div class="al ${cls}">${ico} ${msg}</div>`+box.innerHTML;
+  const all=box.querySelectorAll('.al');if(all.length>5)all[all.length-1].remove();
+}
+
+// ── AGENCY ───────────────────────────────────────────────
+function setAgency(id,status){
+  const map={STANDBY:'chip-sb',NOTIFIED:'chip-nt',DISPATCHED:'chip-dp','EN ROUTE':'chip-er',ARRIVED:'chip-ar',OPERATING:'chip-op'};
+  const cls=map[status]||'chip-sb';
+  ['ag-'+id,'ag2-'+id].forEach(aid=>{
+    const el=document.getElementById(aid);
+    if(el){el.className='chip '+cls;el.textContent=status;}
+  });
+}
+
+// ── TIMELINE ─────────────────────────────────────────────
+function addEvent(msg,sub,type){
+  const t=new Date().toLocaleTimeString();
+  S.events.push({msg,sub,t,type});
+  const c=document.getElementById('timelineLog');
+  if(c.querySelector('.text-mu'))c.innerHTML='';
+  const cols={red:'var(--red)',blue:'var(--accent)',green:'var(--green)',orange:'var(--yellow)'};
+  const col=cols[type]||'var(--accent)';
+  c.innerHTML+=`<div class="tl-item">
+    <div class="tl-dot" style="background:${col};box-shadow:0 0 5px ${col}55;"></div>
+    <div class="tl-t">${t}</div><div class="tl-m">${msg}</div><div class="tl-s">${sub}</div>
+  </div>`;
+  c.scrollTop=c.scrollHeight;
+  document.getElementById('m-events').textContent=S.events.length;
+}
+
+// ── COMM LOG ─────────────────────────────────────────────
+function addComm(msg){
+  const c=document.getElementById('commLog');
+  if(c.querySelector('.text-mu'))c.innerHTML='';
+  c.innerHTML+=`<div class="tl-item"><div class="tl-t">${new Date().toLocaleTimeString()}</div><div class="tl-m">${msg}</div></div>`;
+  c.scrollTop=c.scrollHeight;
+}
+
+// ── NOTIFICATION ──────────────────────────────────────────
+function notify(title,body,type){
+  const cols={danger:'var(--red)',warning:'var(--yellow)',success:'var(--green)',info:'var(--accent)'};
+  const n=document.createElement('div');n.className='notif';
+  n.style.borderLeftColor=cols[type]||'var(--accent)';
+  n.innerHTML=`<div class="notif-title" style="color:${cols[type]||'var(--accent)'}">${title.toUpperCase()}</div><div class="notif-body">${body}</div>`;
+  document.getElementById('notifWrap').appendChild(n);
+  setTimeout(()=>{n.style.transition='all .3s';n.style.opacity='0';n.style.transform='translateX(12px)';setTimeout(()=>n.remove(),300);},4000);
+}
+
+// ── FF SAFETY ────────────────────────────────────────────
+function renderFFSafety(){
+  document.getElementById('ffSafety').innerHTML=
+    [['Alpha Team','⬡ ALERT','var(--yellow)'],['Bravo Team','◈ ACTIVE','var(--green)'],['Charlie Team','◈ ACTIVE','var(--green)']]
+    .map(([n,s,c])=>`<div class="ff-row"><span class="ff-name">🧑‍🚒 ${n}</span><span class="ff-status" style="color:${c}">${s}</span></div>`).join('');
+}
+
+// ── DISPATCH PANELS ───────────────────────────────────────
+function renderDecision(){
+  document.getElementById('decisionEngine').innerHTML=`
+    <div style="background:var(--accent-lt);border:1px solid var(--accent-bdr);border-radius:9px;padding:13px;margin-bottom:10px;">
+      <div class="ptitle" style="color:var(--accent);">◈ IMMEDIATE IMPACT DEPLOYMENT</div>
+      <div class="fw text-sm" style="color:var(--accent);font-family:monospace;margin-bottom:5px;">STATION ALPHA → DEPLOY NOW</div>
+      <div class="text-xs text-mu mb8">Nearest station (2.4 km). Purpose: Slow fire growth and begin rescue.</div>
+      <div style="display:flex;gap:7px;"><span class="badge bd-a">3 TRUCKS</span><span class="badge bd-a">ETA: ~4 MIN</span></div>
+    </div>
+    <div style="background:var(--yellow-lt);border:1px solid var(--yellow-bdr);border-radius:9px;padding:13px;margin-bottom:10px;">
+      <div class="ptitle" style="color:var(--yellow);">◈ SUPPORT DEPLOYMENT</div>
+      <div class="fw text-sm" style="color:var(--yellow);font-family:monospace;margin-bottom:5px;">STATION BRAVO → SIMULTANEOUS</div>
+      <div class="text-xs text-mu mb8">Farther (5.2 km) but fully equipped. Purpose: Full fire suppression.</div>
+      <div style="display:flex;gap:7px;"><span class="badge bd-y">5 TRUCKS</span><span class="badge bd-y">ETA: ~8 MIN</span></div>
+    </div>
+    <div class="al al-s">✅ AI DECISION: Simultaneous dual-station deployment</div>`;
+}
+function renderDeployed(){
+  document.getElementById('deployedUnits').innerHTML=
+    [['🚒','Station Alpha — 3x Trucks','EN ROUTE','4 min','var(--accent)'],
+     ['🚒','Station Bravo — 5x Trucks','EN ROUTE','8 min','var(--green)'],
+     ['🚑','Ambulance Unit 3+7','EN ROUTE','6 min','var(--tx)'],
+     ['🚔','Police Unit 12','DISPATCHED','7 min','var(--yellow)']]
+    .map(([e,u,s,t,c])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--stn);border:1px solid var(--bdr);border-radius:7px;margin-bottom:6px;">
+      <div style="display:flex;align-items:center;gap:8px;"><span>${e}</span><span class="text-sm">${u}</span></div>
+      <span class="badge" style="color:${c};border-color:${c}44;background:${c}11;">${s} · ${t}</span>
+    </div>`).join('');
+}
+function addRedeploy(msg){
+  const c=document.getElementById('redeployLog');
+  if(c.querySelector('.text-mu'))c.innerHTML='';
+  c.innerHTML+=`<div class="al al-w">${msg}</div>`;
+}
+
+// ── SIMULATION STEPS ──────────────────────────────────────
+const STEPS=[
+  {delay:1000,fn(){
+    addAlert('AI analysis complete — classified: CRITICAL','warning');
+    addEvent('🧠 Severity Analyzed','Classification: CRITICAL | Score: 11/12','orange');
+    notify('Severity Analysis','CRITICAL — Activating full response protocol','danger');
+    renderDecision();
+  }},
+  {delay:3000,fn(){
+    renderStations({A:'deploying',B:'deploying'});
+    addAlert('Dispatch activated — Alpha &amp; Bravo deploying','warning');
+    addEvent('🚒 Units Dispatched','Egmore FS: 3 tenders | Anna Nagar FS: 5 tenders','blue');
+    document.getElementById('st-units').textContent='8';
+    renderDeployed();
+    addVehicle('a1',15,25,'🚒',43,44,0);addVehicle('a2',16,27,'🚒',45,45,400);
+    addVehicle('b1',75,20,'🚒',46,43,200);addVehicle('b2',76,22,'🚒',44,46,600);
+    notify('Units Dispatched','Alpha + Bravo — 8 units en route','info');
+  }},
+  {delay:5500,fn(){
+    showCorridor();setAgency('traffic','OPERATING');
+    addAlert('Green Corridor activated — all signals cleared','success');
+    addEvent('🟢 Green Corridor Active','Anna Salai, Poonamallee H. Rd, TTK Rd cleared','green');
+    notify('Green Corridor','All emergency routes cleared!','success');
+  }},
+  {delay:7000,fn(){
+    setAgency('fire','DISPATCHED');setAgency('police','NOTIFIED');
+    setAgency('ambulance','DISPATCHED');setAgency('hospital','NOTIFIED');
+    addAlert('All agencies notified simultaneously','info');
+    addEvent('📡 Agencies Notified','TNFRS, Chennai Police, 108 EMS, GGH Park Town, Chennai Traffic alerted','blue');
+    addComm('CHENNAI FIRE: "Major incident at Spencer Plaza, Anna Salai. Full deployment authorised."');
+    addComm('DISPATCH → Govt General Hospital Park Town: "Expect 8-12 casualties. ETA 5 minutes."');
+    addComm('CHENNAI TRAFFIC POLICE: "Green corridor activated — Anna Salai, Poonamallee High Rd, TTK Rd."');
+    document.getElementById('m-agencies').textContent='5';
+  }},
+  {delay:9000,fn(){
+    setAgency('fire','EN ROUTE');setAgency('ambulance','EN ROUTE');
+    addVehicle('amb',46,10,'🚑',45,43,0);addVehicle('pol',55,30,'🚔',47,46,300);
+    addAlert('Ambulance Unit 3 en route — ETA 6 min','info');
+    addEvent('🚑 Ambulance Deployed','108 Units PT-02 & PT-07 dispatched — ETA 5 min','blue');
+    document.getElementById('m-units').textContent='11';
+  }},
+  {delay:12000,fn(){
+    renderStations({A:'deploying',B:'deployed',C:'deploying'});
+    addAlert('Alpha unit blocked — dynamic redeployment triggered','warning');
+    addAlert('Charlie activated as alternate route','warning');
+    addEvent('⚠️ Redeployment Triggered','Egmore unit blocked at Gemini Flyover | Guindy FS activated via ECR link','orange');
+    addRedeploy('13:42:07 — TRUCK-A2 BLOCKED at Junction 7B. Congestion detected.');
+    addRedeploy('13:42:09 — ALTERNATE DISPATCH → Station Charlie, Unit 2');
+    addRedeploy('13:42:11 — Charlie Unit 2 rerouted via Green Corridor Route 7.');
+    addVehicle('c1',22,74,'🚒',43,45,500);
+    notify('Dynamic Redeployment','Alpha blocked! Charlie activated.','warning');
+  }},
+  {delay:14500,fn(){
+    setAgency('fire','ARRIVED');renderStations({A:'deployed',B:'deployed',C:'deployed'});
+    addAlert('Firefighter units arrived — Teams Alpha, Bravo, Charlie on scene','success');
+    addEvent('🧑‍🚒 Firefighters On Scene','Teams Egmore, Anna Nagar, Guindy | 20 TNFRS personnel','green');
+    [[43,47],[45,44],[44,48]].forEach((pos,i)=>{
+      const el=document.createElement('div');
+      el.style.cssText=`position:absolute;left:${pos[0]}%;top:${pos[1]}%;transform:translate(-50%,-50%);width:8px;height:8px;background:var(--yellow);border:1.5px solid rgba(255,255,255,.7);border-radius:50%;box-shadow:0 0 7px rgba(156,104,0,.4);z-index:8;`;
+      document.getElementById('mapMarkers').appendChild(el);
+    });
+    renderFFSafety();
+    document.getElementById('m-rtime').textContent='7.2 min';
+    document.getElementById('st-resp').textContent='7.2m';
+    notify('Units Arrived','All teams on scene!','success');
+  }},
+  {delay:17000,fn(){
+    document.getElementById('escPanel').style.display='block';
+    document.getElementById('escContent').innerHTML=`
+      <div class="esc-card esc-r"><div class="esc-title" style="color:var(--red)">⚡ FIRE SPREAD RISK</div><div class="esc-desc">NE monsoon winds (38 km/h) — rapid spread toward Nungambakkam</div><div class="sev-bar"><div class="sev-fill" style="width:72%;background:var(--red)"></div></div><div class="esc-pct">RISK: 72%</div></div>
+      <div class="esc-card esc-y"><div class="esc-title" style="color:var(--yellow)">💥 EXPLOSION RISK</div><div class="esc-desc">Gas storage within 80m — explosion risk elevated</div><div class="sev-bar"><div class="sev-fill" style="width:58%;background:var(--yellow)"></div></div><div class="esc-pct">RISK: 58%</div></div>
+      <div class="esc-card esc-b"><div class="esc-title" style="color:var(--accent)">🏗 STRUCTURAL COLLAPSE</div><div class="esc-desc">Multi-story mall — integrity at risk after 20 min</div><div class="sev-bar"><div class="sev-fill" style="width:41%;background:var(--accent)"></div></div><div class="esc-pct">RISK: 41%</div></div>`;
+    addAlert('Escalation risk — Explosion 58% | Structural 41%','danger');
+    addEvent('⚡ Escalation Warning','Fire spread 72% — dry NE wind | LPG explosion 58% | Mall structural 41%','red');
+    notify('ESCALATION ALERT','Fire Spread + Explosion Risk detected!','danger');
+  }},
+  {delay:21000,fn(){
+    setAgency('ambulance','ARRIVED');setAgency('hospital','OPERATING');
+    document.getElementById('hospitalNotif').innerHTML=`
+      <div class="al al-s mb8">✅ GOVT GENERAL HOSPITAL, PARK TOWN — NOTIFIED</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
+        <div class="flex j-between"><span class="text-mu">Hospital</span><span class="fw">Govt General Hospital</span></div>
+        <div class="flex j-between"><span class="text-mu">Units</span><span class="fw">Unit-3, Unit-7</span></div>
+        <div class="flex j-between"><span class="text-mu">ETA</span><span class="fw" style="color:var(--yellow);font-family:monospace;">3 MIN</span></div>
+        <div class="flex j-between"><span class="text-mu">Casualties Est.</span><span class="fw" style="color:var(--red);font-family:monospace;">8-12</span></div>
+        <div class="flex j-between"><span class="text-mu">Trauma Bays</span><span class="fw" style="color:var(--green);font-family:monospace;">4 READY</span></div>
+      </div>
+      <div class="al al-i mt8">🏥 Burns unit &amp; surgical team on standby</div>`;
+    addEvent('🏥 Hospital Alerted','GGH Park Town ready — 8-12 casualties, burns unit on standby','green');
+    addComm('GOVT GENERAL HOSPITAL: Trauma team activated. 4 bays prepared. Burns unit on standby.');
+  }},
+  {delay:24000,fn(){
+    setAgency('fire','OPERATING');setAgency('police','ARRIVED');
+    addAlert('Fire containment in progress — 65% suppressed','success');
+    addEvent('🧯 Fire Containment','Suppression at 65% — Thermal imaging deployed, foam unit active','green');
+    setTimeout(()=>{
+      addAlert('Firefighter alert — Alpha team stationary 4+ min','danger');
+      addEvent('⚠️ Firefighter Alert','Egmore Team no movement 4+ min — accountability check initiated','red');
+      notify('FIREFIGHTER ALERT','Team Alpha stationary 4+ min!','danger');
+    },3000);
+  }},
+  {delay:27000,fn(){
+    setAgency('fire','OPERATING');setAgency('ambulance','OPERATING');setAgency('police','OPERATING');
+    addAlert('Incident contained — situation under control','success');
+    addEvent('✅ Incident Contained','Fire suppressed | All units returning to base | '+S.incId,'green');
+    S.done=true;S.running=false;
+    document.getElementById('m-status').textContent='COMPLETE';
+    document.getElementById('m-status').style.color='var(--green)';
+    const totalTime=Math.round((Date.now()-S.startTime)/1000);
+    S.history.unshift({
+      id:S.incId,loc:(S.incData||{}).loc||'Spencer Plaza, Anna Salai',
+      building:(S.incData||{}).building||'Mall',
+      scale:(S.incData||{}).scale||'Large',
+      severity:(S.incData||{}).severity||'CRITICAL',
+      response:'7.2 min',units:11,outcome:'Contained',
+      closedAt:new Date().toLocaleString(),totalTime:String(totalTime),
+      events:S.events.slice()
+    });
+    const sb=document.getElementById('simBtn');sb.style.display='none';
+    const pb=document.getElementById('pauseBtn');
+    pb.style.display='inline-flex';pb.innerHTML='📋 VIEW REPORT';
+    pb.style.borderColor='var(--green-bdr)';pb.style.color='var(--green)';
+    pb.style.animation='greenglow 2s infinite';pb.onclick=showReport;
+    notify('Simulation Complete',S.incId+' contained! Click VIEW REPORT.','success');
+    renderPlayback();
+  }}
+];
+
+// ── START / PAUSE ─────────────────────────────────────────
+function startSim(){
+  if(S.running&&!S.paused)return;
+  if(!S.active){
+    S.active=true;
+    S.incId='INC-'+(2300+Math.floor(Math.random()*99));
+    S.incData={id:S.incId,loc:'Spencer Plaza, Anna Salai, Chennai',scale:'Large',trapped:'Yes',building:'Mall',weather:'Hot & Dry',severity:'CRITICAL'};
+    addFireMarker(45,45);
+    showSeverity('CRITICAL','Large','Yes','Mall','Windy');
+    document.getElementById('st-active').textContent='1';
+    addEvent('🚨 Incident Reported','ID: '+S.incId+' | 245 Harbor Boulevard','red');
+    notify('Incident Reported',S.incId+' — CRITICAL severity','danger');
+  }
+  S.running=true;S.paused=false;
+  S.startTime=Date.now()-S.pauseOffset;
+  const sb=document.getElementById('simBtn');
+  sb.disabled=true;sb.innerHTML='<span class="blink">●</span> SIMULATION RUNNING...';
+  const pb=document.getElementById('pauseBtn');
+  pb.style.display='inline-flex';pb.textContent='⏸ PAUSE';
+  pb.style.animation='none';pb.onclick=togglePause;
+  if(S.pauseOffset===0){
+    addAlert('Simulation started — AI systems activated','info');
+    addEvent('⚡ Simulation Started','All AI subsystems activated','blue');
+  }else{
+    addAlert('Simulation resumed','info');
+  }
+  const elapsed=S.pauseOffset;
+  S.timers=[];
+  STEPS.forEach(step=>{const rem=step.delay-elapsed;if(rem>0)S.timers.push(setTimeout(step.fn,rem));});
+  showPage('dashboard');
+}
+function togglePause(){
+  if(!S.running)return;
+  S.paused=true;S.running=false;
+  S.pausedAt=Date.now();S.pauseOffset=S.pausedAt-S.startTime;
+  S.timers.forEach(t=>clearTimeout(t));S.timers=[];
+  const sb=document.getElementById('simBtn');
+  sb.disabled=false;sb.innerHTML='▶ RESUME SIMULATION';sb.style.animation='none';
+  const pb=document.getElementById('pauseBtn');pb.textContent='⏹ PAUSED';pb.disabled=true;
+  addAlert('Simulation paused','info');
+  notify('Paused','Click RESUME to continue.','info');
+}
+
+// ── REPORT MODAL ──────────────────────────────────────────
+function showReport(){
+  const d=S.incData||{};const h=S.history[0];
+  const events=(h&&h.events&&h.events.length)?h.events:S.events;
+  const totalTime=h?h.totalTime:'—';
+  const col=sevColor(d.severity||'CRITICAL');
+  const overlay=document.createElement('div');overlay.className='modal-bg';
+  const evHTML=events.map(ev=>{
+    const cols={red:'var(--red)',blue:'var(--accent)',green:'var(--green)',orange:'var(--yellow)'};
+    const c=cols[ev.type]||'var(--accent)';
+    return`<div style="position:relative;margin-bottom:10px;">
+      <div style="position:absolute;left:-14px;top:3px;width:6px;height:6px;background:${c};border-radius:50%;"></div>
+      <div style="font-family:monospace;font-size:9px;color:var(--mu);">${ev.t}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx);">${ev.msg}</div>
+      <div style="font-size:10px;color:var(--mu);">${ev.sub}</div>
+    </div>`;
+  }).join('');
+  overlay.innerHTML=`<div class="modal">
+    <div class="modal-head" style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-family:monospace;font-size:9px;color:var(--mu);letter-spacing:2px;margin-bottom:4px;">// INCIDENT CLOSED — FULL REPORT</div>
+        <div style="font-family:monospace;font-size:20px;font-weight:700;color:var(--tx);">${S.incId}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:3px;">${d.loc||'Harbor Blvd'} · ${new Date().toLocaleString()}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge bd-r" style="font-size:9px;padding:3px 9px;">${d.severity||'CRITICAL'}</span>
+        <button class="modal-close" onclick="this.closest('.modal-bg').remove()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="g4 mb12">
+        ${[['⏱','Duration',totalTime+'s','var(--accent)'],['🚒','Units','11','var(--yellow)'],['⚡','Response','7.2 min','var(--green)'],['📡','Agencies','5','var(--accent)']].map(([i,l,v,c])=>`<div class="stat"><div style="font-size:16px;margin-bottom:4px;">${i}</div><div style="font-family:monospace;font-size:18px;font-weight:700;color:${c};">${v}</div><div class="stat-lbl">${l}</div></div>`).join('')}
+      </div>
+      <div class="ptitle">📋 Incident Details</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px;font-size:11px;">
+        ${[['Location',d.loc||'Harbor Blvd'],['Building',d.building||'Mall'],['Fire Scale',d.scale||'Large'],['Trapped',d.trapped||'Yes'],['Weather',d.weather||'Windy'],['Hazards',d.hazards||'Gas storage'],['Outcome','✅ Contained'],['Severity','<span style="color:'+col+';font-family:monospace;font-weight:700;">'+(d.severity||'CRITICAL')+'</span>']].map(([k,v])=>`<div style="background:var(--stn);border:1px solid var(--bdr);padding:8px 10px;border-radius:7px;"><div style="font-family:monospace;font-size:9px;color:var(--mu);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">${k}</div><div class="fw">${v}</div></div>`).join('')}
+      </div>
+      <div class="ptitle">📅 Timeline Log (${events.length} events)</div>
+      <div style="background:var(--stn);border:1px solid var(--bdr);border-left:2px solid var(--accent);padding:13px 13px 13px 24px;max-height:240px;overflow-y:auto;position:relative;border-radius:8px;margin-bottom:14px;">
+        <div style="position:absolute;left:13px;top:12px;bottom:12px;width:1px;background:var(--bdr2);"></div>
+        ${evHTML}
+      </div>
+      <div style="display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--bdr2);">
+        <button class="btn" onclick="showPage('history');renderHistory();this.closest('.modal-bg').remove();">🗂 VIEW IN HISTORY</button>
+        <button class="btn" onclick="this.closest('.modal-bg').remove();">✕ CLOSE</button>
+        <button class="btn btn-success" onclick="closeIncident();this.closest('.modal-bg').remove();" style="animation:greenglow 2s infinite;">🟢 MARK AS CONTROLLED</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+// ── CLOSE INCIDENT ────────────────────────────────────────
+function closeIncident(){
+  const fm=document.getElementById('fire-marker');if(fm)fm.style.opacity='.15';
+  const fl=document.getElementById('fire-label');if(fl)fl.style.opacity='.15';
+  document.querySelectorAll('#mapVehicles div').forEach(v=>v.style.opacity='.18');
+  document.querySelectorAll('#mapMarkers div:not(.marker)').forEach(f=>{if(f.style.width==='8px')f.remove();});
+  document.getElementById('corridorSvg').innerHTML='';
+  document.getElementById('corridorBar').style.display='none';
+  document.getElementById('st-active').textContent='0';
+  document.getElementById('st-sev').textContent='—';document.getElementById('st-sev').style.color='var(--mu)';
+  document.getElementById('escPanel').style.display='none';
+  ['fire','police','ambulance','hospital','traffic'].forEach(a=>setAgency(a,'STANDBY'));
+  renderStations({});
+  document.getElementById('ffSafety').innerHTML='<div class="text-c text-mu text-xs" style="padding:14px;font-family:monospace;">// NO ACTIVE DEPLOYMENT</div>';
+  document.getElementById('alertsBox').innerHTML='';
+  addAlert('Incident closed — all units returning to base','success');
+  addAlert('Incident archived to database','info');
+  addEvent('🟢 Incident Closed',S.incId+' — Controlled & Closed','green');
+  const pb=document.getElementById('pauseBtn');pb.style.display='none';pb.style.animation='none';
+  const sb=document.getElementById('simBtn');
+  sb.style.display='inline-flex';sb.disabled=false;sb.innerHTML='<span>▶</span> START NEW SIMULATION';
+  sb.style.animation='simglow 2.5s infinite';sb.onclick=()=>{location.reload();};
+  Object.assign(S,{running:false,paused:false,done:false,active:false,pauseOffset:0,timers:[],events:[],incId:null,incData:null});
+  document.getElementById('m-status').textContent='IDLE';
+  document.getElementById('m-status').style.color='var(--mu)';
+  // banner
+  const b=document.createElement('div');
+  b.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border:1.5px solid var(--green-bdr);padding:30px 44px;text-align:center;z-index:600;box-shadow:var(--shadow2);border-radius:16px;';
+  b.innerHTML='<div style="font-size:38px;margin-bottom:10px;">✅</div><div style="font-family:monospace;font-size:17px;font-weight:700;color:var(--green);letter-spacing:2px;">INCIDENT UNDER CONTROL</div><div style="font-size:10px;color:var(--mu);margin-top:7px;font-family:monospace;letter-spacing:1px;">ALL UNITS RETURNING TO BASE</div>';
+  document.body.appendChild(b);
+  setTimeout(()=>{b.style.transition='opacity .5s';b.style.opacity='0';setTimeout(()=>b.remove(),500);},2800);
+  renderHistory();
+}
+
+// ── PLAYBACK ─────────────────────────────────────────────
+function renderPlayback(){
+  if(S.history[0]&&S.events.length>0) S.history[0].events=S.events.slice();
+  var cnt=S.events.length;
+  var id=S.incId||'---';
+  var div=document.createElement('div');
+  div.innerHTML='<div class="text-mu text-xs mb8" style="font-family:monospace;">// '+id+' &mdash; '+cnt+' events recorded</div>'
+    +'<button class="btn btn-primary w-full" onclick="replayTimeline()">&#9658; REPLAY INCIDENT TIMELINE</button>';
+  document.getElementById('playbackPanel').innerHTML='';
+  document.getElementById('playbackPanel').appendChild(div);
+}
+function replayTimeline(){
+  var h=S.history[0];
+  var evts=(S.events&&S.events.length>0)?S.events.slice():(h&&h.events&&h.events.length>0)?h.events.slice():[];
+  var lbl=S.incId||(h&&h.id)||'INC-????';
+  if(!evts.length){notify('Playback','No events recorded yet.','info');return;}
+  showPage('timeline');
+  notify('Playback','Replaying '+evts.length+' events from '+lbl,'info');
+  setTimeout(function(){
+    var c=document.getElementById('timelineLog');
+    if(!c)return;
+    c.innerHTML='';
+    if(window._rpt){window._rpt.forEach(function(t){clearTimeout(t);}); window._rpt=[];}
+    window._rpt=[];
+    evts.forEach(function(ev,i){
+      var tid=setTimeout(function(){
+        var clrs={red:'var(--red)',blue:'var(--accent)',green:'var(--green)',orange:'var(--yellow)'};
+        var cl=clrs[ev.type]||'var(--accent)';
+        c.innerHTML+='<div class="tl-item">'
+          +'<div class="tl-dot" style="background:'+cl+';box-shadow:0 0 5px '+cl+'55;"></div>'
+          +'<div class="tl-t">'+ev.t+'</div>'
+          +'<div class="tl-m">'+ev.msg+'</div>'
+          +'<div class="tl-s">'+ev.sub+'</div>'
+          +'</div>';
+        c.scrollTop=c.scrollHeight;
+        var me=document.getElementById('m-events');if(me)me.textContent=i+1;
+      },i*480);
+      window._rpt.push(tid);
+    });
+  },100);
+}
+
+// ── HISTORY CHART ANIMATION ──────────────────────────────
+function animateHistCharts(){
+  var el;
+  // containment bar
+  el=document.getElementById('anim-containment');
+  if(el) el.style.width='94%';
+  // response time bars (max 10min = 100%)
+  el=document.getElementById('rbar-1');if(el)el.style.width='46%';
+  el=document.getElementById('rbar-2');if(el)el.style.width='72%';
+  el=document.getElementById('rbar-3');if(el)el.style.width='54%';
+  // unit bars (max 14 = 100%)
+  el=document.getElementById('ubar-1');if(el)el.style.height='21%';
+  el=document.getElementById('ubar-2');if(el)el.style.height='50%';
+  el=document.getElementById('ubar-3');if(el)el.style.height='100%';
+}
+
+// ── HISTORY ──────────────────────────────────────────────
+function renderHistory(){
+  const c=document.getElementById('historyList');
+  if(!S.history.length){c.innerHTML='<div class="text-c text-mu text-xs" style="padding:24px;font-family:monospace;">// NO INCIDENTS IN DATABASE</div>';return;}
+  c.innerHTML=S.history.map((h,i)=>`
+    <div class="hist-row" onclick="showHistDetail(${i})">
+      <div style="font-size:14px;">${{CRITICAL:'🔴',HIGH:'🟠',MEDIUM:'🟡',LOW:'🟢'}[h.severity]||'⚪'}</div>
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:700;font-family:monospace;">${h.id}</div>
+        <div class="text-xs text-mu">${h.loc} · ${h.building}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge bd-${h.severity==='CRITICAL'||h.severity==='HIGH'?'r':h.severity==='MEDIUM'?'y':'g'}">${h.severity}</span>
+        <div class="text-xs text-mu mt8" style="font-family:monospace;font-size:9px;">${h.closedAt||''}</div>
+      </div>
+    </div>`).join('');
+  var hstot=document.getElementById('hs-total');if(hstot)hstot.textContent=S.history.length;
+}
+function showHistDetail(i){
+  const h=S.history[i];const col=sevColor(h.severity);const events=h.events||[];
+  document.getElementById('historyDetail').innerHTML=`
+    <div class="al al-i mb8">// ${h.id}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;font-size:11px;">
+      ${[['Location',h.loc],['Building',h.building],['Scale',h.scale],['Severity',`<span style="color:${col};font-family:monospace;font-weight:700;">${h.severity}</span>`],['Response',`<span style="color:var(--green);font-family:monospace;">${h.response}</span>`],['Units',h.units],['Outcome','✅ '+h.outcome],['Closed',h.closedAt||'—']].map(([k,v])=>`<div style="background:var(--stn);border:1px solid var(--bdr);padding:7px 9px;border-radius:7px;"><div style="font-family:monospace;font-size:9px;color:var(--mu);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;">${k}</div><div class="fw">${v}</div></div>`).join('')}
+    </div>
+    ${events.length?`<div class="ptitle">📅 Timeline (${events.length} events)</div>
+    <div style="background:var(--stn);border:1px solid var(--bdr);border-left:2px solid var(--accent);padding:12px 12px 12px 22px;max-height:180px;overflow-y:auto;position:relative;border-radius:8px;">
+      <div style="position:absolute;left:12px;top:10px;bottom:10px;width:1px;background:var(--bdr2);"></div>
+      ${events.map(ev=>{const cols={red:'var(--red)',blue:'var(--accent)',green:'var(--green)',orange:'var(--yellow)'};const c=cols[ev.type]||'var(--accent)';return`<div style="position:relative;margin-bottom:9px;"><div style="position:absolute;left:-13px;top:3px;width:6px;height:6px;background:${c};border-radius:50%;"></div><div style="font-family:monospace;font-size:9px;color:var(--mu);">${ev.t}</div><div style="font-size:11px;font-weight:700;color:var(--tx);">${ev.msg}</div><div style="font-size:10px;color:var(--mu);">${ev.sub}</div></div>`;}).join('')}
+    </div>`:'<div class="text-xs text-mu mt8" style="font-family:monospace;">// NO TIMELINE DATA FOR THIS RECORD</div>'}`;
+}
+renderHistory();
+
+// ── COMPARISON ────────────────────────────────────────────
+function initCompare(){
+  const metrics=[
+    {n:'Arrival Time',t:85,s:30,tl:'18-22 min',sl:'6-8 min'},
+    {n:'Fire Spread',t:65,s:18,tl:'65%',sl:'18%'},
+    {n:'Efficiency',t:38,s:94,tl:'38%',sl:'94%'},
+    {n:'Casualty Risk',t:75,s:15,tl:'High',sl:'Low'},
+    {n:'Containment',t:90,s:35,tl:'45-60 min',sl:'12-18 min'},
+  ];
+  document.getElementById('compBars').innerHTML=metrics.map(m=>`
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:9px;font-family:monospace;margin-bottom:5px;text-transform:uppercase;letter-spacing:.8px;">
+        <span class="text-mu">${m.n}</span>
+        <div style="display:flex;gap:8px;"><span style="color:var(--red)">${m.tl}</span><span class="text-mu">vs</span><span style="color:var(--green)">${m.sl}</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div><div class="text-xs text-mu mb8" style="font-family:monospace;letter-spacing:.8px;">TRADITIONAL</div>
+        <div style="height:6px;background:var(--bar-bg);border-radius:3px;overflow:hidden;"><div id="tb-${m.n.replace(/ /g,'')}" style="width:0%;height:100%;background:var(--red);border-radius:3px;transition:width 1s;"></div></div></div>
+        <div><div class="text-xs text-mu mb8" style="font-family:monospace;letter-spacing:.8px;">SMART (SERS)</div>
+        <div style="height:6px;background:var(--bar-bg);border-radius:3px;overflow:hidden;"><div id="sb-${m.n.replace(/ /g,'')}" data-t="${m.t}" data-s="${m.s}" style="width:0%;height:100%;background:var(--accent);border-radius:3px;transition:width 1s;"></div></div></div>
+      </div>
+    </div>`).join('');
+}
+function runCompare(){
+  ['ArrivalTime','FireSpread','Efficiency','CasualtyRisk','Containment'].forEach((n,i)=>{
+    setTimeout(()=>{
+      const tb=document.getElementById('tb-'+n);const sb=document.getElementById('sb-'+n);
+      if(tb&&sb){tb.style.width=sb.dataset.t+'%';sb.style.width=sb.dataset.s+'%';}
+    },i*300);
+  });
+}
+initCompare();
+
+// ── RESOURCES ─────────────────────────────────────────────
+function statusColor(s){return{available:'var(--green)',mission:'var(--red)',maintenance:'var(--yellow)'}[s]||'var(--mu)';}
+function statusLabel(s){return{available:'🟢 AVAILABLE',mission:'🔴 ON MISSION',maintenance:'🟡 MAINTENANCE'}[s]||s.toUpperCase();}
+function setResFilter(f){
+  activeResFilter=f;
+  document.querySelectorAll('.res-filter').forEach(b=>b.classList.toggle('active',b.dataset.f===f));
+  renderResources();
+}
+function randomRes(){
+  const opts=['available','available','available','mission','maintenance'];
+  DEPTS.forEach(d=>d.stations.forEach(s=>s.units.forEach(u=>{u.status=opts[Math.floor(Math.random()*opts.length)];u.crew=u.status==='maintenance'?0:Math.floor(Math.random()*5)+1;})));
+  renderResSummary();renderResources();
+}
+function renderResSummary(){
+  let total=0,avail=0,miss=0,maint=0;
+  DEPTS.forEach(d=>d.stations.forEach(s=>s.units.forEach(u=>{total++;if(u.status==='available')avail++;else if(u.status==='mission')miss++;else maint++;})));
+  document.getElementById('res-summary').innerHTML=[
+    {l:'Total Units',v:total,c:'var(--accent)'},{l:'Available',v:avail,c:'var(--green)'},
+    {l:'On Mission',v:miss,c:'var(--red)'},{l:'Maintenance',v:maint,c:'var(--yellow)'}
+  ].map(s=>`<div class="stat"><div class="stat-val" style="color:${s.c}">${s.v}</div><div class="stat-lbl">${s.l}</div></div>`).join('');
+}
+function renderResources(){
+  const container=document.getElementById('resDepts');container.innerHTML='';
+  DEPTS.forEach(dept=>{
+    const filtered=dept.stations.map(stn=>({...stn,units:activeResFilter==='all'?stn.units:stn.units.filter(u=>u.status===activeResFilter)})).filter(s=>s.units.length>0);
+    if(!filtered.length)return;
+    let da=0,dm=0,dmt=0;
+    dept.stations.forEach(s=>s.units.forEach(u=>{if(u.status==='available')da++;else if(u.status==='mission')dm++;else dmt++;}));
+    const sec=document.createElement('div');sec.style.marginBottom='18px';
+    sec.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--card);border:1px solid var(--bdr);border-left:3px solid ${dept.color};border-radius:9px;margin-bottom:9px;box-shadow:var(--shadow);">
+        <div style="font-size:13px;font-weight:700;font-family:monospace;">${dept.label}</div>
+        <div style="display:flex;gap:7px;">
+          <span class="badge bd-g">${da} AVAIL</span>
+          <span class="badge bd-r">${dm} MISSION</span>
+          <span class="badge bd-y">${dmt} MAINT</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+        ${filtered.map(stn=>`
+          <div class="panel" style="padding:13px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:${dept.color};font-family:monospace;letter-spacing:.5px;">◈ ${stn.name}</div>
+                <div style="font-size:9px;color:var(--mu);margin-top:2px;font-family:monospace;letter-spacing:.5px;">${stn.id} · ${stn.location} · ${stn.grid}</div>
+              </div>
+              <span class="badge bd-m">${stn.units.length} UNIT${stn.units.length!==1?'S':''}</span>
+            </div>
+            ${stn.units.map(u=>`
+              <div class="res-unit" style="border-left:2px solid ${statusColor(u.status)};">
+                <div><div style="font-size:11px;font-weight:700;font-family:monospace;">${u.id}</div>
+                <div style="font-size:9px;color:var(--mu);">${u.type}${u.capacity&&u.capacity!=='—'?' · '+u.capacity:''}</div></div>
+                <div style="text-align:right;">
+                  <div style="font-size:9px;font-weight:700;color:${statusColor(u.status)};font-family:monospace;">${statusLabel(u.status)}</div>
+                  <div style="font-size:9px;color:var(--mu);">👤 ${u.crew} CREW</div>
+                </div>
+              </div>`).join('')}
+          </div>`).join('')}
+      </div>`;
+    container.appendChild(sec);
+  });
+}
+renderResSummary();renderResources();
+</script>
+</body>
+</html>
